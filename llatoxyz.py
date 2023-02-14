@@ -1,5 +1,6 @@
 import math
 
+#WGS84 ellipsoid model to cartesian
 def convert_to_cartesian(ref_lat, ref_lon, ref_alt, target_lat, target_lon, target_alt):
     # Convert degrees to radians
     ref_lat = math.radians(ref_lat)
@@ -30,14 +31,46 @@ def convert_to_cartesian(ref_lat, ref_lon, ref_alt, target_lat, target_lon, targ
     z = z_target - z_ref
 
     return (x, y, z)
+"""
+The first function, cartesian_to_ecef, takes Cartesian coordinates (x, y, z) and returns ECEF coordinates (x_ecef, y_ecef, z_ecef) using the WGS84 ellipsoid model. 
+The second function, ecef_to_lla, takes ECEF coordinates and returns LLA coordinates (latitude, longitude, altitude) using the same ellipsoid model.
 
-    # Example usage
-    ref_lat = 37.7749
-    ref_lon = -122.4194
-    ref_alt = 0
-    target_lat = 51.5074
-    target_lon = -0.1278
-    target_alt = 0
-    x, y, z = convert_to_cartesian(ref_lat, ref_lon, ref_alt, target_lat, target_lon, target_alt)
-    return x,y,z
- 
+To use the functions, first call cartesian_to_ecef with your Cartesian coordinates to get ECEF coordinates. Then, call ecef_to_lla with the ECEF coordinates to get LLA coordinates, as shown in the example usage. The output will be printed to the console.
+"""
+def cartesian_to_ecef(x, y, z):
+    # Constants for WGS84 ellipsoid model
+    a = 6378137.0
+    b = 6356752.314245
+    f = (a - b) / a
+    e_sq = f * (2 - f)
+
+    # Calculate ECEF coordinates
+    N = a / math.sqrt(1 - e_sq * math.sin(math.radians(y))**2)
+    x_ecef = (N + z) * math.cos(math.radians(y)) * math.cos(math.radians(x))
+    y_ecef = (N + z) * math.cos(math.radians(y)) * math.sin(math.radians(x))
+    z_ecef = ((1 - e_sq) * N + z) * math.sin(math.radians(y))
+
+    return x_ecef, y_ecef, z_ecef
+
+
+def ecef_to_lla(x, y, z):
+    # Constants for WGS84 ellipsoid model
+    a = 6378137.0
+    b = 6356752.314245
+    f = (a - b) / a
+    e_sq = f * (2 - f)
+
+    # Calculate longitude and latitude
+    lon = math.atan2(y, x)
+    p = math.sqrt(x**2 + y**2)
+    lat = math.atan2(z, p*(1-e_sq))
+    N = a / math.sqrt(1 - e_sq*math.sin(lat)**2)
+
+    # Calculate altitude
+    alt = p / math.cos(lat) - N
+
+    # Convert to degrees
+    lon = math.degrees(lon)
+    lat = math.degrees(lat)
+
+    return lat, lon, alt
